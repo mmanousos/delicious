@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const User = mongoose.model("User");
 const promisify = require("es6-promisify");
-// const util = require("util");
+// const { promisify } = require("util");
 
 exports.loginForm = (req, res) => {
   res.render("login", { title: "Login" });
@@ -46,11 +46,16 @@ exports.validateRegister = (req, res, next) => {
 // `register` function from `passport` library takes care of actually registering the user & hashing the password
 exports.register = async (req, res, next) => {
   const user = new User({ email: req.body.email, name: req.body.name });
+
+  // using util.promisify
+  // const registerWithPromise = promisify(User.register);
+  // await registerWithPromise(user, req.body.password);
+  // res.send("it works!");
+
+  // using es6-promisify
   const registerWithPromise = promisify(User.register, User); // now the registerWithPromise function will return a Promise, instead of a callback
   await registerWithPromise(user, req.body.password);
-  // res.send("it works!");
-  // next();
-  console.log("it works!");
+  res.send("it works!");
 };
 
 // registration is not going through - no error message

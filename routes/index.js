@@ -5,7 +5,7 @@ const userController = require("../controllers/userController");
 const authController = require("../controllers/authController");
 const { catchErrors } = require("../handlers/errorHandlers");
 
-// stores
+// STORES
 router.get("/", storeController.getStores);
 router.get("/stores", storeController.getStores);
 router.get("/add", authController.isLoggedIn, storeController.addStore);
@@ -27,11 +27,11 @@ router.post(
 
 router.get("/stores/:id/edit", catchErrors(storeController.editStore));
 
-// tags
+// TAGS
 router.get("/tags", catchErrors(storeController.getStoresByTag));
 router.get("/tags/:tag", catchErrors(storeController.getStoresByTag));
 
-// user
+// USER
 router.get("/login", userController.loginForm);
 router.post("/login", authController.login);
 
@@ -63,5 +63,8 @@ router.post(
   catchErrors(authController.findUser),
   catchErrors(authController.update)
 );
+
+// API
+router.get("/api/search", catchErrors(storeController.searchStores));
 
 module.exports = router;

@@ -4,7 +4,7 @@ const multer = require("multer");
 const jimp = require("jimp");
 const uuid = require("uuid");
 
-// specify where uploaded file should be save & file types
+// specify where uploaded file should be saved & file types
 const multerOptions = {
   storage: multer.memoryStorage(), // into memory so we can resize before saving to file
   fileFilter(req, file, next) {
@@ -47,6 +47,8 @@ exports.resize = async (req, res, next) => {
 };
 
 exports.createStore = async (req, res) => {
+  req.body.author = req.user._id;
+
   const store = await new Store(req.body).save();
   req.flash(
     "success",
@@ -56,7 +58,9 @@ exports.createStore = async (req, res) => {
 };
 
 exports.getStoreBySlug = async (req, res, next) => {
-  const store = await Store.findOne({ slug: req.params.slug });
+  const store = await Store.findOne({ slug: req.params.slug }).populate(
+    "author"
+  );
   if (!store) return next(); // if there's no matching store, move on to the error handling from app.js
   // res.json(store.name);
   res.render("store", { store, title: store.name });
@@ -67,12 +71,18 @@ exports.getStores = async (req, res) => {
   res.render("stores", { title: "Stores", stores });
 };
 
+const confirmOwner = (store, user) => {
+  if (!store.author.equals(user._id)) {
+    throw Error("You must own a store in order to edit it!");
+  }
+};
+
 exports.editStore = async (req, res) => {
   // 1. fetch store from DB given id
   const store = await Store.findOne({ _id: req.params.id });
 
   // 2. confirm they are the owner
-  // TODO
+  confirmOwner(store, req.user);
 
   // 3. render the edit form so user can update the store
   res.render("editStore", { title: `Edit ${store.name}`, store });

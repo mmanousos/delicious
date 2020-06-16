@@ -3,6 +3,7 @@ const crypto = require("crypto");
 const mongoose = require("mongoose");
 const User = mongoose.model("User");
 const promisify = require("es6-promisify");
+const mail = require("../handlers/mail");
 
 exports.login = passport.authenticate("local", {
   failureRedirect: "/login",
@@ -42,10 +43,13 @@ exports.forgot = async (req, res) => {
 
   // 3. send email with the token
   const resetURL = `http://${req.headers.host}/account/reset/${user.resetPasswordToken}`;
-  req.flash(
-    "success",
-    `You have been emailed a password reset link. ${resetURL}`
-  );
+  await mail.send({
+    user,
+    subject: "Password Reset",
+    resetURL,
+    filename: "password-reset", // looks for password-reset pug file as email template
+  });
+  req.flash("success", `You have been emailed a password reset link.`);
 
   // 4. redirect to login page
   res.redirect("/login");
@@ -62,7 +66,8 @@ exports.findUser = async (req, res, next) => {
     req.redirect("/login");
   }
 
-  next(user);
+  res.locals.userObj = user;
+  next();
 };
 
 exports.reset = async (req, res) => {
@@ -80,8 +85,9 @@ exports.confirmedPasswords = (req, res, next) => {
   res.redirect("back");
 };
 
-exports.update = async (req, res, user) => {
+exports.update = async (req, res) => {
   // `setPassword` is provided by passport library - but is callback-based
+  let user = res.locals.userObj;
   const setPasswordWithPromise = promisify(user.setPassword, user);
   await setPasswordWithPromise(req.body.password);
 
@@ -95,5 +101,3 @@ exports.update = async (req, res, user) => {
   req.flash("success", "Your password is updated! You are now logged in!");
   res.redirect("/");
 };
-
-// is it possible to pass the user object to the next function from a middleware?

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Store = mongoose.model("Store");
+const User = mongoose.model("User");
 const multer = require("multer");
 const jimp = require("jimp");
 const uuid = require("uuid");
@@ -172,4 +173,20 @@ exports.mapStores = async (req, res) => {
 
 exports.mapPage = (req, res) => {
   res.render("map", { title: "Map" });
+};
+
+exports.heartStore = async (req, res) => {
+  // get list of users hearted stores
+  const hearts = req.user.hearts.map((obj) => obj.toString());
+  // determine what we should do - add or remove
+  // if the store id is already in the hearts collection, "pull" (remove)
+  // otherwise "addToSet" (add but only unique instances so no multiples)
+  const operator = hearts.includes(req.params.id) ? "$pull" : "$addToSet";
+  // find the user within User schema and update its collection of hearts
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { [operator]: { hearts: req.params.id } },
+    { new: true }
+  );
+  res.json(user);
 };

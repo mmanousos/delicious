@@ -26,6 +26,11 @@ router.post(
 );
 
 router.get("/stores/:id/edit", catchErrors(storeController.editStore));
+router.get(
+  "/hearts",
+  authController.isLoggedIn,
+  catchErrors(storeController.getHearts)
+);
 
 // TAGS
 router.get("/tags", catchErrors(storeController.getStoresByTag));

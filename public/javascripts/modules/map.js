@@ -72,7 +72,7 @@ const loadPlaces = (map, lat = 43.2, lng = -79.8) => {
 const makeMap = (mapDiv) => {
   if (!mapDiv) return;
   // make the map
-  const map = new google.maps.Map(mapDiv, mapOptions());
+  const map = new google.maps.Map(mapDiv, mapOptions);
   loadPlaces(map);
 
   const input = $('[name="geolocate"]');

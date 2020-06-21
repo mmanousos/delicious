@@ -1103,7 +1103,7 @@ var loadPlaces = function loadPlaces(map) {
 var makeMap = function makeMap(mapDiv) {
   if (!mapDiv) return;
   // make the map
-  var map = new google.maps.Map(mapDiv, mapOptions());
+  var map = new google.maps.Map(mapDiv, mapOptions);
   loadPlaces(map);
 
   var input = (0, _bling.$)('[name="geolocate"]');

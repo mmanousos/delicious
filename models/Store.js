@@ -133,4 +133,12 @@ storeSchema.virtual("reviews", {
   foreignField: "store", // what is the related field in the other model: "store"
 });
 
+function autopopulate(next) {
+  this.populate("reviews");
+  next();
+}
+
+storeSchema.pre("find", autopopulate);
+storeSchema.pre("findOne", autopopulate);
+
 module.exports = mongoose.model("Store", storeSchema);

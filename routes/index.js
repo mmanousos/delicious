@@ -33,6 +33,8 @@ router.get(
   catchErrors(storeController.getHearts)
 );
 
+router.get("/top", catchErrors(storeController.getTopStores));
+
 // TAGS
 router.get("/tags", catchErrors(storeController.getStoresByTag));
 router.get("/tags/:tag", catchErrors(storeController.getStoresByTag));

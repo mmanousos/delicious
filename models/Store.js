@@ -3,44 +3,60 @@ mongoose.Promise = global.Promise;
 
 const slug = require("slugs");
 
-const storeSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    trim: true, // removes white space (Wes's suggests formatting data as close to model as possible)
-    required: "Please enter a store name", // instead of boolean, return error message if it's missing
-  },
-  slug: String,
-  description: {
-    type: String,
-    trim: true,
-  },
-  tags: [String], // can contain one or many tags
-  created: {
-    type: Date,
-    default: Date.now,
-  },
-  location: {
-    type: {
+const storeSchema = new mongoose.Schema(
+  {
+    name: {
       type: String,
-      default: "Point",
+      trim: true, // removes white space (Wes's suggests formatting data as close to model as possible)
+      required: "Please enter a store name", // instead of boolean, return error message if it's missing
     },
-    coordinates: [
-      {
-        type: Number,
-        required: "You must supply coordinates!",
+    slug: String,
+    description: {
+      type: String,
+      trim: true,
+    },
+    tags: [String], // can contain one or many tags
+    created: {
+      type: Date,
+      default: Date.now,
+    },
+    location: {
+      type: {
+        type: String,
+        default: "Point",
       },
-    ],
-    address: {
-      type: String,
-      required: "You must supply an address!",
+      coordinates: [
+        {
+          type: Number,
+          required: "You must supply coordinates!",
+        },
+      ],
+      address: {
+        type: String,
+        required: "You must supply an address!",
+      },
+    },
+    photo: String,
+    author: {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
+      required: "You must supply an author",
     },
   },
-  photo: String,
-  author: {
-    type: mongoose.Schema.ObjectId,
-    ref: "User",
-    required: "You must supply an author",
-  },
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+// define indexes
+storeSchema.index({
+  name: "text",
+  description: "text",
+});
+
+storeSchema.index({
+  location: "2dsphere",
 });
 
 storeSchema.pre("save", async function (next) {
@@ -68,5 +84,12 @@ storeSchema.statics.getTagsList = function () {
     { $sort: { count: -1 } },
   ]);
 };
+
+storeSchema.virtual("reviews", {
+  // query an additional model without denormalizing the data
+  ref: "Review", // which model: "Review"
+  localField: "_id", // what is the field in our current model: "_id"
+  foreignField: "store", // what is the related field in the other model: "store"
+});
 
 module.exports = mongoose.model("Store", storeSchema);

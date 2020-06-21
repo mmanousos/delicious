@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Store = mongoose.model("Store");
+const User = mongoose.model("User");
 const multer = require("multer");
 const jimp = require("jimp");
 const uuid = require("uuid");
@@ -59,10 +60,9 @@ exports.createStore = async (req, res) => {
 
 exports.getStoreBySlug = async (req, res, next) => {
   const store = await Store.findOne({ slug: req.params.slug }).populate(
-    "author"
+    "author reviews"
   );
   if (!store) return next(); // if there's no matching store, move on to the error handling from app.js
-  // res.json(store.name);
   res.render("store", { store, title: store.name });
 };
 
@@ -126,4 +126,73 @@ exports.getStoresByTag = async (req, res) => {
   // destructure the result of the Promises into distinct variables
 
   res.render("tag", { title: "Tags", tags, stores, tag });
+};
+
+exports.searchStores = async (req, res) => {
+  const stores = await Store
+    // first find stores that match the query
+    .find(
+      {
+        $text: {
+          $search: req.query.q,
+        },
+      },
+      {
+        score: { $meta: "textScore" },
+      }
+    )
+    // then sort them by meta score (how many times the query term was in the entry)
+    .sort({
+      score: { $meta: "textScore" },
+    })
+    // then limit to 5 results
+    .limit(5);
+  res.json(stores);
+};
+
+exports.mapStores = async (req, res) => {
+  const coordinates = [req.query.lng, req.query.lat].map(parseFloat);
+  const q = {
+    location: {
+      $near: {
+        $geometry: {
+          type: "Point",
+          coordinates,
+        },
+        $maxDistance: 10000, // 10km
+      },
+    },
+  };
+
+  const stores = await Store.find(q)
+    .select("slug name description location photo")
+    .limit(10);
+  res.json(stores);
+};
+
+exports.mapPage = (req, res) => {
+  res.render("map", { title: "Map" });
+};
+
+exports.heartStore = async (req, res) => {
+  // get list of users hearted stores
+  const hearts = req.user.hearts.map((obj) => obj.toString());
+  // determine what we should do - add or remove
+  // if the store id is already in the hearts collection, "pull" (remove)
+  // otherwise "addToSet" (add but only unique instances so no multiples)
+  const operator = hearts.includes(req.params.id) ? "$pull" : "$addToSet";
+  // find the user within User schema and update its collection of hearts
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { [operator]: { hearts: req.params.id } },
+    { new: true }
+  );
+  res.json(user);
+};
+
+exports.getHearts = async (req, res) => {
+  const stores = await Store.find({
+    _id: { $in: req.user.hearts }, // _id of the store is present in the user.hearts array
+  });
+  res.render("stores", { title: "Hearted Stores", stores });
 };

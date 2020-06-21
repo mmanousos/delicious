@@ -60,10 +60,9 @@ exports.createStore = async (req, res) => {
 
 exports.getStoreBySlug = async (req, res, next) => {
   const store = await Store.findOne({ slug: req.params.slug }).populate(
-    "author"
+    "author reviews"
   );
   if (!store) return next(); // if there's no matching store, move on to the error handling from app.js
-  // res.json(store.name);
   res.render("store", { store, title: store.name });
 };
 

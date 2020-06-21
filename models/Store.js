@@ -85,6 +85,47 @@ storeSchema.statics.getTagsList = function () {
   ]);
 };
 
+storeSchema.statics.getTopStores = function () {
+  return this.aggregate([
+    // lookup stores and populate their reviews
+    {
+      $lookup: {
+        from: "reviews",
+        localField: "_id",
+        foreignField: "store",
+        as: "reviews",
+      },
+    },
+    // filter for only items that have 2 or more reviews
+    {
+      $match: { "reviews.1": { $exists: true } },
+    },
+    // add an "average reviews" field
+    {
+      $project: {
+        // be sure to also pull in photo, name, number of reviews
+        photo: "$$ROOT.photo",
+        name: "$$ROOT.name",
+        slug: "$$ROOT.slug",
+        reviews: "$$ROOT.reviews",
+        averageRating: {
+          $avg: "$reviews.rating",
+        },
+      },
+    },
+    // sort by the new average reviews field, highest reviews first
+    {
+      $sort: {
+        averageRating: -1,
+      },
+    },
+    // limit to max 10
+    {
+      $limit: 10,
+    },
+  ]);
+};
+
 storeSchema.virtual("reviews", {
   // query an additional model without denormalizing the data
   ref: "Review", // which model: "Review"

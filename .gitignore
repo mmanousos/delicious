@@ -1,2 +1,6 @@
 node_modules
 variables.env
+variables.env.now
+.DS_store
+*.log
+.idea
